@@ -60,13 +60,13 @@ async function predict(imgElement) {
     return my_model.predict(batched);
   });
 
-  const classes = await getTopKClasses(logits, TOPK_PREDICTIONS);
+  const topClass = await getTopKClasses(logits, TOPK_PREDICTIONS);
   const totalTime1 = performance.now() - startTime1;
   const totalTime2 = performance.now() - startTime2;
   status(`Done in ${Math.floor(totalTime1)} ms ` +
       `(not including preprocessing: ${Math.floor(totalTime2)} ms)`);
 
-  showResults(imgElement, classes);
+  showResults(imgElement, topClass);
 }
 async function getTopKClasses(logits, topK) {
   const values = await logits.data();
@@ -80,21 +80,17 @@ async function getTopKClasses(logits, topK) {
   });
   const topkValues = new Float32Array(topK);
   const topkIndices = new Int32Array(topK);
-  for (let i = 0; i < topK; i++) {
-    topkValues[i] = valuesAndIndices[i].value;
-    topkIndices[i] = valuesAndIndices[i].index;
-  }
+  topkValues[0] = valuesAndIndices[0].value;
+  topkIndices[0] = valuesAndIndices[0].index;
 
-  const topClassesAndProbs = [];
-  for (let i = 0; i < topkIndices.length; i++) {
-    topClassesAndProbs.push({
-      className: CLASSES[topkIndices[i]],
-      probability: topkValues[i]
-    })
-  }
-  return topClassesAndProbs;
+  const topClass = {
+    className: CLASSES[topkIndices[0]],
+    probability: topkValues[0]
+  };
+
+  console.log(topClass);
+  return topClass;
 }
-
 function showResults(imgElement, classes) {
   const predictionContainer = document.createElement('div');
   predictionContainer.className = 'pred-container';
@@ -107,14 +103,16 @@ function showResults(imgElement, classes) {
   const row = document.createElement('div');
   row.className = 'row';
 
+  console.log(classes.probability);
+
   const probsElement = document.createElement('div');
   probsElement.className = 'cell';
-  probsElement.innerText = classes[0].probability.toFixed(3);
+  probsElement.innerText = classes.probability.toFixed(3);
   row.appendChild(probsElement);
 
   const classElement = document.createElement('div');
   classElement.className = 'cell';
-  classElement.innerText = classes[0].className;
+  classElement.innerText = classes.className;
   row.appendChild(classElement);
 
   probsContainer.appendChild(row);
